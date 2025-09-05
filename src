@@ -1,0 +1,81 @@
+#include <LiquidCrystal.h>
+#include <OneWire.h>
+#include <DallasTemperature.h>
+#include <Servo.h>
+
+LiquidCrystal lcd(16, 17, 18, 19, 20, 21);
+
+OneWire oneWire(9);
+DallasTemperature sensors(&oneWire);
+
+Servo servo1;
+Servo servo2;
+
+#define TRIG 6
+#define ECHO 7
+#define JOY_BUTTON_PIN 4  // Joystick SW pin
+#define SERVO1_PIN 10
+#define SERVO2_PIN 11
+#define BUZZER 12
+#define RED_PIN 13
+#define GREEN_PIN 14
+#define BLUE_PIN 15
+
+void setup() {
+  pinMode(TRIG, OUTPUT);
+  pinMode(ECHO, INPUT);
+  pinMode(JOY_BUTTON_PIN, INPUT_PULLUP); // Active LOW
+  pinMode(BUZZER, OUTPUT);
+  pinMode(RED_PIN, OUTPUT);
+  pinMode(GREEN_PIN, OUTPUT);
+  pinMode(BLUE_PIN, OUTPUT);
+
+  servo1.attach(SERVO1_PIN);
+  servo2.attach(SERVO2_PIN);
+
+  sensors.begin();
+  lcd.begin(16, 2);
+  lcd.clear();
+}
+
+void loop() {
+  long duration;
+  digitalWrite(TRIG, LOW);
+  delayMicroseconds(2);
+  digitalWrite(TRIG, HIGH);
+  delayMicroseconds(10);
+  digitalWrite(TRIG, LOW);
+  duration = pulseIn(ECHO, HIGH);
+  float distance = duration * 0.034 / 2;
+
+  if (distance < 20 || digitalRead(JOY_BUTTON_PIN) == LOW) {
+    servo1.write(0);
+    tone(BUZZER, 1000, 500);
+    setRGB(0, 255, 0);
+    sensors.requestTemperatures();
+    float temp = sensors.getTempCByIndex(0);
+    lcd.clear();
+    lcd.setCursor(0, 0);
+    lcd.print("Feeding Started");
+    lcd.setCursor(0, 1);
+    lcd.print("Temp:");
+    lcd.print(temp);
+    lcd.print("C");
+    delay(1000);
+    setRGB(255, 255, 0);
+    servo2.write(0);
+    delay(3000);
+    servo2.write(90);
+    setRGB(255, 0, 0);
+    delay(1000);
+    servo1.write(90);
+  }
+
+  delay(1000);
+}
+
+void setRGB(int r, int g, int b) {
+  analogWrite(RED_PIN, r);
+  analogWrite(GREEN_PIN, g);
+  analogWrite(BLUE_PIN, b);
+}
